@@ -1,33 +1,38 @@
 //console.log("hello word");
 const { json } = require('express');
+const db =require('./services/db');
+const session =require('express-session');
 const express = require('express');
 const app = express();
 const dataService = require('./services/data.service');
 app.use(express.json());
+let currentuser;
+
+app.use(session({
+    secret:'randomsecurestring',
+    resave:false,
+    saveUninitialized:false}))
 
 
-// const logMiddleware =(req,res,next)=>{
-//     console.log(req.body);
-//     next()
-// }
-// app.use(logMiddleware);
-// const authMiddleware=(req,res,next)=>{
-//     if(!req.session.currentUser){
-//         return  res.json({
-//             status:false,
-//             statusCode:401,
-//             message:"please log In"
-//         })
-//     }
-//     else{
-//         next()
-//     }
-// }
+const logMiddleware =(req,res,next)=>{
+    console.log(req.body);
+    next()
+}
+//app.use(logMiddleware);
 
-// app.use(session(session){
-//     secret:'r'
-
-// })
+const authMiddleware=(req,res,next)=>{
+    console.log(req.session.currentuser);
+    if(!req.session.currentuser){
+        return res.json({
+            status:false,
+            statusCode: 401,
+            message:"please log In"
+        })
+    }
+    else{
+        next()
+    }
+}
 
 app.get('/',(req,res)=>{
     res.status(444).send("get method updated")
@@ -39,15 +44,30 @@ app.post('/',(req,res)=>{
 
 })
 app.post('/register',(req,res)=>{
-    console.log(req.body);
-    const result = dataService.register(req.body.acno,req.body.username,req.body.password)
-       console.log(res.send(result.message));
+    //console.log(req.body);
+    dataService.register(req.body.acno,req.body.username,req.body.password)
+    .then(result=>{res.status(result.statusCode).json(result)});
 })
    
  app.post('/login',(req,res)=>{
-     console.log(req.body);
-    const result = dataService.login(req.body.acno,req.body.password)
-       console.log(res.send(result.message));
+     //console.log(req.body);
+    dataService.login(req,req.body.acno,req.body.password)
+       .then(result=>{res.status(result.statusCode).json(result)});
+
+})
+
+app.post('/deposit',authMiddleware,(req,res)=>{
+    console.log(req.session.currentUser);
+    //console.log(req.body);
+   dataService.deposit(req.body.acno,req.body.password,req.body.amount)
+      .then(result=>{
+          res.status(result.statusCode).json(result)});
+
+})
+app.post('/withdraw',authMiddleware,(req,res)=>{
+    //console.log(req.body);
+   dataService.withdraw(req.body.acno,req.body.password,req.body.amount)
+      .then(result=>{res.status(result.statusCode).json(result)});
 
 })
 app.put('/',(req,res)=>{
