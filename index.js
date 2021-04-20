@@ -1,12 +1,17 @@
 //console.log("hello word");
 const { json } = require('express');
-const db =require('./services/db');
+//const db =require('./services/db');
 const session =require('express-session');
 const express = require('express');
+const cors =require('cors');
 const app = express();
 const dataService = require('./services/data.service');
 app.use(express.json());
 let currentuser;
+app.use(cors({
+    origin:'http://localhost:4200',
+    credentials:true
+}))
 
 app.use(session({
     secret:'randomsecurestring',
@@ -66,10 +71,20 @@ app.post('/deposit',authMiddleware,(req,res)=>{
 })
 app.post('/withdraw',authMiddleware,(req,res)=>{
     //console.log(req.body);
-   dataService.withdraw(req.body.acno,req.body.password,req.body.amount)
+   dataService.withdraw(req,req.body.acno,req.body.password,req.body.amount)
       .then(result=>{res.status(result.statusCode).json(result)});
 
 })
+
+app.delete('/deleteAccDetails/:acno',(req,res)=>{
+    dataService.deletAccDetails(req.params.acno)
+    .then(result=>{
+        res.status(result.statusCode).json(result)
+    })
+    //res.send("delet method haii")
+})
+
+
 app.put('/',(req,res)=>{
     res.send("put method")
 

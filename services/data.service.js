@@ -74,12 +74,14 @@ const login = (req, accno, pswd) => {
     password: pswd
   }).then(user => {
     if (user) {
-      req.session.currentuser = user
+      req.session.currentuser = user.acno;
       //console.log(req.session.currentuser);
       return {
         status: true,
         statusCode: 200,
-        message: "login successfull"
+        message: "login successfull",
+        name:user.username,
+        acno:user.acno
       }
     }
     return {
@@ -122,7 +124,7 @@ const deposit = (acno, pwd, amount) => {
 
 
 
-const withdraw = (acno, pwd, amount) => {
+const withdraw = (req,acno, pwd, amount) => {
   var amt = parseInt(amount);
   return db.User.findOne({
     acno,
@@ -133,6 +135,13 @@ const withdraw = (acno, pwd, amount) => {
         status: false,
         statusCode: 422,
         message: "no user exist with provide Account number"
+      }
+    }
+    if(req.session.currentuser!=acno){
+      return{
+        statusCode:false,
+        statusCode:422,
+        message:"transaction denied"
       }
     }
     if (user.balance < amt) {
@@ -154,12 +163,33 @@ const withdraw = (acno, pwd, amount) => {
 
   })
 }
+const deletAccDetails =(acno)=>{
+  return db.User.deleteOne({
+    acno:acno
+  }).then(user=>{
+    if(!user){
+      return{
+        statusCode:false,
+        statusCode:422,
+        message:"operation failed"
+
+      }
+    }
+    return{
+      status: true,
+      statusCode: 200,
+      message: "Account number "+ acno+ "deleted successfully"
+
+    }
+  })
+}
 
 module.exports = {
   register,
   login,
   deposit,
-  withdraw
+  withdraw,
+  deletAccDetails
 }
 //console.log(accno+"haii")
 //   if (accno in accountDetails) {
